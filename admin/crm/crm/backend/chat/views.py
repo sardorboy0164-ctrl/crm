@@ -29,7 +29,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         if request.user.role not in allowed_roles:
             return Response({'error': 'Sizga suhbat ochish ruxsati yo\'q.'}, status=status.HTTP_403_FORBIDDEN)
 
-        student_id = request.daxssta.get('student_id')
+        student_id = request.data.get('student_id')
         if not student_id:
             return Response({'error': 'student_id kiritilishi shart.'}, status=status.HTTP_400_BAD_REQUEST)
 

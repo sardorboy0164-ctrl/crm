@@ -12,7 +12,6 @@ export default function Register() {
     password_confirm: '',
     phone: '',
     date_of_birth: '',
-    role: 'oquvchi',
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -105,15 +104,7 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="role">Kim sifatida ro'yxatdan o'tasiz?</label>
-              <select id="role" name="role" className="edu-input" value={formData.role} onChange={handleChange}>
-                <option value="oquvchi">O'quvchi</option>
-                <option value="ota_ona">Ota-ona</option>
-                <option value="ustoz">Ustoz</option>
-              </select>
-            </div>
-
+            <p className="auth-form-subtitle">Ro'yxatdan o'tganda siz o'quvchi sifatida qayd etilasiz — rolni faqat admin belgilaydi.</p>
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="password">Parol</label>

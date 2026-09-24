@@ -6,6 +6,14 @@ from .models import User, ParentStudent, TeacherSubject, Notification
 class UserSerializer(serializers.ModelSerializer):
     is_online = serializers.BooleanField(read_only=True)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Rolni faqat admin o'zgartira oladi — boshqalarda role o'qiluvchi maydon.
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not (user and user.is_authenticated and user.role == 'admin'):
+            self.fields['role'].read_only = True
+
     class Meta:
         model = User
         fields = [
@@ -35,6 +43,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        # Ro'yxatdan o'tishda rol tanlanmaydi — faqat admin yaratayotganda
+        # kiritilgan rol qabul qilinadi, aks holda default 'oquvchi' bo'ladi.
+        request = self.context.get('request')
+        requester = getattr(request, 'user', None)
+        if not (requester and requester.is_authenticated and requester.role == 'admin'):
+            validated_data.pop('role', None)
+
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
         user = User(**validated_data)

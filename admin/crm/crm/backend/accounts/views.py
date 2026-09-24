@@ -15,12 +15,27 @@ from .serializers import (
 )
 
 
+class IsAdminRole(permissions.BasePermission):
+    """Faqat role='admin' foydalanuvchi uchun ruxsat."""
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user and request.user.is_authenticated and request.user.role == 'admin'
+        )
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['role', 'is_active']
     search_fields = ['username', 'email', 'first_name', 'last_name', 'phone']
     ordering_fields = ['created_at', 'username', 'coin_balance']
+
+    def get_permissions(self):
+        # Yaratish / o'zgartirish / ochirish — faqat admin uchun.
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [permissions.IsAuthenticated(), IsAdminRole()]
+        return [permissions.AllowAny()]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -31,9 +46,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def profile(self, request):
         user = request.user
         if request.method == 'GET':
-            serializer = UserSerializer(user)
+            serializer = self.get_serializer(user)
             return Response(serializer.data)
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -149,7 +164,9 @@ class UserViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def register_view(request):
-    serializer = UserCreateSerializer(data=request.data)
+    # Kontekst uzatiladi: admin panelidan yaratilganda rol qabul qilinadi,
+    # oddiy ro'yxatdan o'tishda esa rol e'tiborsga olinadi (default: oquvchi).
+    serializer = UserCreateSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
     user.is_approved = False

@@ -83,9 +83,15 @@ class PostCommentViewSet(viewsets.ModelViewSet):
     filterset_fields = ['post', 'author']
     ordering_fields = ['created_at']
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
 
 class PostLikeViewSet(viewsets.ModelViewSet):
     queryset = PostLike.objects.select_related('user', 'post').all()
     serializer_class = PostLikeSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['post', 'user']
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

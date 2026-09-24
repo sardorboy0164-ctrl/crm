@@ -52,9 +52,6 @@ export default function AdminPanel() {
   const [editingItem, setEditingItem] = useState(null)
   const [formData, setFormData] = useState({})
   const [saving, setSaving] = useState(false)
-  const [showAssignModal, setShowAssignModal] = useState(false)
-  const [assignUser, setAssignUser] = useState(null)
-  const [assignGroupId, setAssignGroupId] = useState('')
   const [showCoinModal, setShowCoinModal] = useState(false)
   const [coinAmount, setCoinAmount] = useState(10)
   const [coinRole, setCoinRole] = useState('oquvchi')
@@ -173,20 +170,6 @@ export default function AdminPanel() {
       fetchData()
     } catch (err) {
       setError("O'chirishda xatolik")
-    }
-  }
-
-  const handleAssignGroup = async () => {
-    if (!assignUser || !assignGroupId) return
-    try {
-      await api.post(`/accounts/users/${assignUser.id}/assign-group/`, { group_id: parseInt(assignGroupId) })
-      setShowAssignModal(false)
-      setAssignUser(null)
-      setAssignGroupId('')
-      setSuccess("O'quvchi guruhga qo'shildi!")
-      setTimeout(() => setSuccess(''), 3000)
-    } catch (err) {
-      setError(err.response?.data?.detail || "Xatolik")
     }
   }
 
@@ -528,22 +511,13 @@ export default function AdminPanel() {
                         <td>
                           <div className="action-btns">
                             {u.role === 'oquvchi' && (
-                              <>
-                                <button
-                                  className="btn btn-sm btn-success"
-                                  onClick={() => { setAssignUser(u); setShowAssignModal(true) }}
-                                  title="Guruhga qo'shish"
-                                >
-                                  📋
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-secondary"
-                                  onClick={() => openStudentGroups(u)}
-                                  title="Guruhlarini ko'rish"
-                                >
-                                  📚
-                                </button>
-                              </>
+                              <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => openStudentGroups(u)}
+                                title="Guruhlarini ko'rish / guruhga qo'shish"
+                              >
+                                📚
+                              </button>
                             )}
                             {u.role === 'ota_ona' && (
                               <button
@@ -678,6 +652,12 @@ export default function AdminPanel() {
                         <span className="admin-group-label">Ustoz:</span>
                         <span className="admin-group-value">
                           {g.teacher_name || g.teacher || 'Tayinlanmagan'}
+                        </span>
+                      </div>
+                      <div className="admin-group-info-row">
+                        <span className="admin-group-label">Kurator:</span>
+                        <span className="admin-group-value">
+                          {g.kurator_name || g.kurator || 'Tayinlanmagan'}
                         </span>
                       </div>
                       <div className="admin-group-info-row">
@@ -841,6 +821,15 @@ export default function AdminPanel() {
                       ))}
                     </select>
                   </div>
+                  <div className="form-group">
+                    <label>Kurator</label>
+                    <select className="edu-input" value={formData.kurator || ''} onChange={e => setFormData(p => ({ ...p, kurator: e.target.value || null }))}>
+                      <option value="">Tayinlanmagan</option>
+                      {users.filter(u => u.role === 'kurator').map(k => (
+                        <option key={k.id} value={k.id}>{k.first_name} {k.last_name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="form-row">
                     <div className="form-group">
                       <label>Xona</label>
@@ -862,37 +851,6 @@ export default function AdminPanel() {
               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Bekor qilish</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
                 {saving ? 'Saqlanmoqda...' : 'Saqlash'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showAssignModal && (
-        <div className="modal-overlay" onClick={() => setShowAssignModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Guruhga qo'shish</h2>
-              <button className="modal-close" onClick={() => setShowAssignModal(false)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <p className="mb-1">
-                <strong>{assignUser?.first_name} {assignUser?.last_name}</strong> ni qaysi guruhga qo'shmoqchisiz?
-              </p>
-              <div className="form-group">
-                <label>Guruhni tanlang</label>
-                <select className="edu-input" value={assignGroupId} onChange={e => setAssignGroupId(e.target.value)}>
-                  <option value="">Guruh tanlang...</option>
-                  {groups.map(g => (
-                    <option key={g.id} value={g.id}>{g.name} ({subjectLabels[g.subject] || g.subject})</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowAssignModal(false)}>Bekor qilish</button>
-              <button className="btn btn-primary" onClick={handleAssignGroup} disabled={!assignGroupId}>
-                Qo'shish
               </button>
             </div>
           </div>

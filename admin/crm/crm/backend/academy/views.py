@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from datetime import date
@@ -174,22 +175,26 @@ class HomeworkViewSet(viewsets.ModelViewSet):
                 group_ids = GroupStudent.objects.filter(
                     student_id=student_id, is_active=True
                 ).values_list('group_id', flat=True)
-                return qs.filter(group_id__in=group_ids)
+                # Guruhsiz (umumiy) uy vazifalari ham ko'rinadi
+                return qs.filter(Q(group_id__in=group_ids) | Q(group__isnull=True))
 
         if user.role == 'oquvchi':
             group_ids = GroupStudent.objects.filter(
                 student=user, is_active=True
             ).values_list('group_id', flat=True)
-            return qs.filter(group_id__in=group_ids)
+            return qs.filter(Q(group_id__in=group_ids) | Q(group__isnull=True))
         if user.role == 'ota_ona':
             child_ids = user.children.values_list('student_id', flat=True)
             group_ids = GroupStudent.objects.filter(
                 student_id__in=child_ids, is_active=True
             ).values_list('group_id', flat=True)
-            return qs.filter(group_id__in=group_ids)
+            return qs.filter(Q(group_id__in=group_ids) | Q(group__isnull=True))
         if user.role in ('ustoz', 'qowimcha_ustoz'):
-            return qs.filter(group__teacher=user)
+            return qs.filter(Q(group__teacher=user) | Q(group__isnull=True))
         return qs
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['get'])
     def submissions(self, request, pk=None):

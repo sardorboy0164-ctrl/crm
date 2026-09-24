@@ -153,10 +153,14 @@ class Attendance(models.Model):
 
 
 class Homework(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='homeworks')
+    # Guruh va muddat endi ixtiyoriy: faqat sarlavha + matn bilan ham
+    # umumiy uy vazifasi yaratish mumkin (guruhsiz = barcha guruhlar uchun).
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name='homeworks', null=True, blank=True
+    )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, default='')
-    due_date = models.DateField()
+    due_date = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -169,7 +173,7 @@ class Homework(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.title} - {self.group.name}"
+        return f"{self.title} - {self.group.name if self.group else 'Barcha guruhlar'}"
 
 
 class HomeworkSubmission(models.Model):

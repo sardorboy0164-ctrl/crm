@@ -69,8 +69,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 
 class HomeworkSerializer(serializers.ModelSerializer):
-    group_name = serializers.CharField(source='group.name', read_only=True)
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True, default=None)
+    group_name = serializers.SerializerMethodField()
+    created_by_name = serializers.SerializerMethodField()
     submissions_count = serializers.SerializerMethodField()
     submitted = serializers.SerializerMethodField()
     grade = serializers.SerializerMethodField()
@@ -84,7 +84,17 @@ class HomeworkSerializer(serializers.ModelSerializer):
             'created_by', 'created_by_name', 'submissions_count',
             'submitted', 'grade', 'feedback', 'answer_text', 'created_at',
         ]
-        read_only_fields = ['id', 'created_at']
+        # created_by serverda request.user dan to'ldiriladi (perform_create)
+        read_only_fields = ['id', 'created_by', 'created_at']
+
+    def get_group_name(self, obj):
+        # Guruhsiz (umumiy) uy vazifasi uchun ham xato bermaydi
+        return obj.group.name if obj.group_id else ''
+
+    def get_created_by_name(self, obj):
+        if not obj.created_by_id:
+            return ''
+        return obj.created_by.get_full_name() or obj.created_by.username
 
     def _requested_student_id(self):
         request = self.context.get('request')

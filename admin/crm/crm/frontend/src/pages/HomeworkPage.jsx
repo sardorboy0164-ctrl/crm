@@ -10,9 +10,7 @@ export default function HomeworkPage() {
   const [selectedGroup, setSelectedGroup] = useState('')
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
-  const [formData, setFormData] = useState({
-    title: '', description: '', group: '', due_date: '', attachment: null
-  })
+  const [formData, setFormData] = useState({ title: '', description: '' })
   const [submitData, setSubmitData] = useState({ homework: '', answer_text: '', file: null })
   const [showSubmit, setShowSubmit] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -44,22 +42,24 @@ export default function HomeworkPage() {
   }
 
   const handleCreate = async () => {
+    if (!formData.title.trim()) {
+      setMessage("⚠️ Sarlavha kiriting")
+      return
+    }
     setSaving(true)
     setMessage('')
     try {
-      const fd = new FormData()
-      fd.append('title', formData.title)
-      fd.append('description', formData.description)
-      fd.append('group', formData.group)
-      fd.append('due_date', formData.due_date)
-      if (formData.attachment) fd.append('attachment', formData.attachment)
-      await api.post('/academy/homeworks/', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      // Faqat sarlavha + matn — boshqa hech nima talab qilinmaydi
+      await api.post('/academy/homeworks/', {
+        title: formData.title,
+        description: formData.description,
+      })
       setMessage('✅ Uy vazifasi yaratildi!')
       setShowCreate(false)
-      setFormData({ title: '', description: '', group: '', due_date: '', attachment: null })
+      setFormData({ title: '', description: '' })
       fetchHomeworks()
     } catch (err) {
-      setMessage("⚠️ Yaratishda xatolik")
+      setMessage(err.response?.data?.detail || JSON.stringify(err.response?.data) || "⚠️ Yaratishda xatolik")
     } finally {
       setSaving(false)
     }
@@ -85,8 +85,12 @@ export default function HomeworkPage() {
     }
   }
 
-  const isTeacher = user?.role === 'ustoz'
-  const filteredHomeworks = selectedGroup ? homeworks.filter(h => h.group?.toString() === selectedGroup || h.group === parseInt(selectedGroup)) : homeworks
+  const canCreate = ['admin', 'kurator', 'ustoz', 'qowimcha_ustoz'].includes(user?.role)
+  const isStudent = user?.role === 'oquvchi'
+  // Guruh bo'yicha filtr: guruhsiz (umumiy) vazifalar har doim ko'rinadi
+  const filteredHomeworks = selectedGroup
+    ? homeworks.filter(h => !h.group || h.group?.toString() === selectedGroup || h.group === parseInt(selectedGroup))
+    : homeworks
 
   if (loading) {
     return (
@@ -102,7 +106,7 @@ export default function HomeworkPage() {
       <div className="page-header">
         <h1 className="page-title glow-text">📋 Uy vazifalari</h1>
         <p className="page-subtitle">Topshiriqlar boshqaruvi</p>
-        {isTeacher && (
+        {canCreate && (
           <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
             {showCreate ? '✖ Bekor' : '➕ Yangi topshiriq'}
           </button>
@@ -118,33 +122,16 @@ export default function HomeworkPage() {
 
       {message && <div className={message.startsWith('✅') ? 'auth-success' : 'auth-error'}>{message}</div>}
 
-      {showCreate && isTeacher && (
+      {showCreate && canCreate && (
         <div className="edu-card">
           <h3 className="edu-card-title">➕ Yangi topshiriq</h3>
           <div className="form-group">
             <label>Sarlavha</label>
-            <input type="text" className="edu-input" value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} />
+            <input type="text" className="edu-input" value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} placeholder="Masalan: 1-dars tayanch so'zlari" />
           </div>
           <div className="form-group">
-            <label>Tavsif</label>
-            <textarea className="edu-input" rows="3" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}></textarea>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Guruh</label>
-              <select className="edu-input" value={formData.group} onChange={e => setFormData(p => ({ ...p, group: e.target.value }))}>
-                <option value="">— Tanlang —</option>
-                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Muddat</label>
-              <input type="datetime-local" className="edu-input" value={formData.due_date} onChange={e => setFormData(p => ({ ...p, due_date: e.target.value }))} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Ilova</label>
-            <input type="file" className="edu-input" onChange={e => setFormData(p => ({ ...p, attachment: e.target.files[0] }))} />
+            <label>Matn</label>
+            <textarea className="edu-input" rows="4" value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Uy vazifasi matni..."></textarea>
           </div>
           <button className="btn btn-primary" onClick={handleCreate} disabled={saving}>
             {saving ? 'Yaratilmoqda...' : '💾 Saqlash'}
@@ -173,8 +160,8 @@ export default function HomeworkPage() {
               )}
             </div>
             <p className="homework-desc">{hw.description}</p>
-            <p className="text-muted">📋 {hw.group_name || hw.group?.name || '—'}</p>
-            {!isTeacher && (
+            <p className="text-muted">📋 {hw.group_name || hw.group?.name || 'Barcha guruhlar'}</p>
+            {isStudent && (
               <>
                 {hw.submitted ? (
                   <div className="homework-submitted">
@@ -192,7 +179,7 @@ export default function HomeworkPage() {
                 )}
               </>
             )}
-            {isTeacher && hw.submissions_count !== undefined && (
+            {canCreate && hw.submissions_count !== undefined && (
               <p className="text-muted">📤 {hw.submissions_count} ta topshirildi</p>
             )}
 
