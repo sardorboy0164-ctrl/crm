@@ -117,7 +117,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def messages(self, request, pk=None):
         conversation = self.get_object()
-        Conversation.objects.filter(id=conversation.pk, participants=request.user)
         qs = conversation.messages.select_related('sender')
         serializer = MessageSerializer(qs, many=True)
         conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)

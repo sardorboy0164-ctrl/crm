@@ -14,7 +14,7 @@ class KuratorPhoto(models.Model):
         on_delete=models.CASCADE,
         related_name='kurator_photos',
     )
-    photo = models.ImageField(upload_to='kurator_photos/')
+    photo = models.ImageField(upload_to='kurator_photos/', blank=True, null=True)
     description = models.TextField(blank=True, default='')
     date = models.DateField()
     students_present = models.ManyToManyField(
@@ -61,6 +61,62 @@ class StudentStatus(models.Model):
 
     def __str__(self):
         return f"{self.student.get_full_name()} - {self.get_status_display()} ({self.kurator.get_full_name()})"
+
+
+class Room(models.Model):
+    """Kurator tomonidan boshqariladigan xona (sinf xonasi)."""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    photo = models.ImageField(upload_to='rooms/', blank=True, null=True)
+    capacity = models.PositiveIntegerField(default=20)
+    kurator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='rooms',
+        limit_choices_to={'role': 'kurator'},
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.kurator.get_full_name()})"
+
+
+class StudentGrade(models.Model):
+    """Kurator o'quvchilarni baholash (1-5 yoki yaxshi/yomon)."""
+    GRADE_CHOICES = [
+        (1, '1 - Yomon'),
+        (2, '2 - Qoniqarsiz'),
+        (3, '3 - O\'rtacha'),
+        (4, '4 - Yaxshi'),
+        (5, '5 - A\'lo'),
+    ]
+
+    kurator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='given_grades',
+        limit_choices_to={'role': 'kurator'},
+    )
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='grades',
+        limit_choices_to={'role': 'oquvchi'},
+    )
+    grade = models.PositiveSmallIntegerField(choices=GRADE_CHOICES)
+    comment = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ('kurator', 'student')
+
+    def __str__(self):
+        return f"{self.student.get_full_name()} - {self.get_grade_display()} ({self.kurator.get_full_name()})"
 
 
 class KuratorReport(models.Model):

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import KuratorPhoto, KuratorReport, StudentStatus
+from .models import KuratorPhoto, KuratorReport, StudentStatus, Room, StudentGrade
 
 
 class KuratorPhotoSerializer(serializers.ModelSerializer):
@@ -34,6 +34,25 @@ class KuratorReportSerializer(serializers.ModelSerializer):
 
     def get_groups_covered_names(self, obj):
         return [g.name for g in obj.groups_covered.all()]
+
+
+class RoomSerializer(serializers.ModelSerializer):
+    kurator_name = serializers.CharField(source='kurator.get_full_name', read_only=True)
+
+    class Meta:
+        model = Room
+        fields = ['id', 'name', 'description', 'photo', 'capacity', 'kurator', 'kurator_name', 'created_at']
+        read_only_fields = ['id', 'kurator', 'created_at']
+
+
+class StudentGradeSerializer(serializers.ModelSerializer):
+    kurator_name = serializers.CharField(source='kurator.get_full_name', read_only=True)
+    student_name = serializers.CharField(source='student.get_full_name', read_only=True)
+
+    class Meta:
+        model = StudentGrade
+        fields = ['id', 'kurator', 'kurator_name', 'student', 'student_name', 'grade', 'comment', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'kurator', 'created_at', 'updated_at']
 
 
 class StudentStatusSerializer(serializers.ModelSerializer):

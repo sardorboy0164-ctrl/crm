@@ -6,8 +6,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q
 
-from .models import KuratorPhoto, KuratorReport, StudentStatus
-from .serializers import KuratorPhotoSerializer, KuratorReportSerializer, StudentStatusSerializer
+from .models import KuratorPhoto, KuratorReport, StudentStatus, Room, StudentGrade
+from .serializers import KuratorPhotoSerializer, KuratorReportSerializer, StudentStatusSerializer, RoomSerializer, StudentGradeSerializer
 
 
 class KuratorPhotoViewSet(viewsets.ModelViewSet):
