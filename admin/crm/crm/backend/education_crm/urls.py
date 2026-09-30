@@ -24,5 +24,5 @@ else:
 
 # Serve React frontend for all non-API routes
 urlpatterns += [
-    re_path(r'^(?!api/|admin/|media/|static/).*$', TemplateView.as_view(template_name='index.html'), name='frontend'),
+    re_path(r'^(?!api/|admin/|media/|static/|assets/).*$', TemplateView.as_view(template_name='index.html'), name='frontend'),
 ]
