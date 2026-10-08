@@ -18,14 +18,35 @@ BATTLE_WIN_COINS = 2
 
 
 def _generate_battle_questions(battle, count=BATTLE_QUESTIONS_COUNT):
-    """Jang uchun shu fandan mavjud testlar asosida savollar yaratadi.
+    """Jang uchun savollar yaratadi.
 
-    Ilgari jang yaratilganda hech qanday savol qo'shilmas edi, shuning uchun
-    arena bo'sh turar edi.
+    Avval admin tomonidan yaratilgan jang savollaridan foydalanadi.
+    Agar admin savollar yetarli bo'lmasa, quiz'lonadan qo'shimcha oladi.
     """
     if battle.questions.exists():
         return
 
+    # Admin tomonidan yaratilgan jang savollari
+    admin_qs = BattleQuestion.objects.filter(
+        battle__isnull=True,
+        subject=battle.subject,
+    ).order_by('?')[:count]
+
+    if admin_qs.count() >= count:
+        for aq in admin_qs:
+            BattleQuestion.objects.create(
+                battle=battle,
+                question_text=aq.question_text,
+                choice1=aq.choice1,
+                choice2=aq.choice2,
+                choice3=aq.choice3,
+                choice4=aq.choice4,
+                correct_answer=aq.correct_answer,
+                asked_by=aq.asked_by,
+            )
+        return
+
+    # Admin savollar yetmasa, quiz'lonadan to'ldirish
     from quiz.models import Question as QuizQuestion
 
     bank = list(

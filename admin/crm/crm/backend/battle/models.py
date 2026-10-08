@@ -59,7 +59,8 @@ class Battle(models.Model):
 
 
 class BattleQuestion(models.Model):
-    battle = models.ForeignKey(Battle, on_delete=models.CASCADE, related_name='questions')
+    battle = models.ForeignKey(Battle, on_delete=models.CASCADE, related_name='questions', null=True, blank=True)
+    subject = models.CharField(max_length=20, choices=SUBJECT_CHOICES, default='matematika')
     question_text = models.TextField()
     choice1 = models.CharField(max_length=300)
     choice2 = models.CharField(max_length=300)

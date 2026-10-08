@@ -18,6 +18,7 @@ export default function BattlePage() {
   const [creating, setCreating] = useState(false)
   const [activeTab, setActiveTab] = useState('active')
   const [message, setMessage] = useState('')
+  const [studentSubjectFilter, setStudentSubjectFilter] = useState('all')
 
   useEffect(() => {
     fetchBattles()
@@ -291,6 +292,19 @@ export default function BattlePage() {
                 <option value="tarix">Tarix</option>
               </select>
             </div>
+            <div className="form-group">
+              <label>O'quvchilarni filtrlash</label>
+              <select className="edu-input" value={studentSubjectFilter} onChange={e => setStudentSubjectFilter(e.target.value)}>
+                <option value="all">Barcha o'quvchilar</option>
+                <option value="matematika">Matematika o'quvchilari</option>
+                <option value="ingliz_tili">Ingliz tili o'quvchilari</option>
+                <option value="rus_tili">Rus tili o'quvchilari</option>
+                <option value="fizika">Fizika o'quvchilari</option>
+                <option value="kimyo">Kimyo o'quvchilari</option>
+                <option value="biologiya">Biologiya o'quvchilari</option>
+                <option value="tarix">Tarix o'quvchilari</option>
+              </select>
+            </div>
             <p className="text-muted">Onlayn o'quvchilar birinchi bo'lib turadi — jangga chaqirib, g'alaba qozonsangiz 2 coin olasiz!</p>
           </div>
           {students.length === 0 ? (
@@ -300,7 +314,7 @@ export default function BattlePage() {
             </div>
           ) : (
             <div className="cards-grid">
-              {students.map(s => (
+              {students.filter(s => studentSubjectFilter === 'all' || (s.subjects && s.subjects.includes(studentSubjectFilter)) || (s.groups && s.groups.some(g => g.subject === studentSubjectFilter))).map(s => (
                 <div key={s.id} className={`edu-card student-card ${s.is_online ? 'student-card-online' : ''}`}>
                   <div className="student-card-main">
                     <div className="student-avatar-wrap">

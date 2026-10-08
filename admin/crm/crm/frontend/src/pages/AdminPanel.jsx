@@ -67,6 +67,10 @@ export default function AdminPanel() {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false)
   const [resetPasswordUser, setResetPasswordUser] = useState(null)
   const [newPassword, setNewPassword] = useState('')
+  const [battleQuestions, setBattleQuestions] = useState([])
+  const [battleQSubject, setBattleQSubject] = useState('matematika')
+  const [battleQForm, setBattleQForm] = useState({ question_text: '', choice1: '', choice2: '', choice3: '', choice4: '', correct_answer: 1 })
+  const [savingBattleQ, setSavingBattleQ] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -98,6 +102,49 @@ export default function AdminPanel() {
     } catch (err) {
     }
   }, [])
+
+  const fetchBattleQuestions = useCallback(async () => {
+    try {
+      const res = await api.get('/battle/battle-questions/')
+      setBattleQuestions(res.data?.results || res.data || [])
+    } catch (err) {
+    }
+  }, [])
+
+  const handleSaveBattleQuestion = async () => {
+    if (!battleQForm.question_text || !battleQForm.choice1 || !battleQForm.choice2) {
+      setError('Savol matni va kamida 2 ta variant kiritilishi shart!')
+      return
+    }
+    setSavingBattleQ(true)
+    setError('')
+    try {
+      await api.post('/battle/battle-questions/', {
+        ...battleQForm,
+        correct_answer: Number(battleQForm.correct_answer),
+      })
+      setSuccess('Jang savoli saqlandi!')
+      setTimeout(() => setSuccess(''), 3000)
+      setBattleQForm({ question_text: '', choice1: '', choice2: '', choice3: '', choice4: '', correct_answer: 1 })
+      fetchBattleQuestions()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Xatolik')
+    } finally {
+      setSavingBattleQ(false)
+    }
+  }
+
+  const handleDeleteBattleQuestion = async (id) => {
+    if (!confirm('Savolni o\'chirishga ishonchingiz komilmi?')) return
+    try {
+      await api.delete(`/battle/battle-questions/${id}/`)
+      setSuccess('Savol o\'chirildi!')
+      setTimeout(() => setSuccess(''), 3000)
+      fetchBattleQuestions()
+    } catch (err) {
+      setError('Xatolik')
+    }
+  }
 
   useEffect(() => {
     fetchData()
@@ -318,6 +365,7 @@ export default function AdminPanel() {
     { id: 'dashboard', icon: '📊', label: 'Dashboard' },
     { id: 'users', icon: '👥', label: 'Foydalanuvchilar', count: users.length },
     { id: 'groups', icon: '📋', label: 'Guruhlar', count: groups.length },
+    { id: 'battle-questions', icon: '⚔️', label: 'Jang savollari' },
     { id: 'pending', icon: '⏳', label: 'Tasdiqlash kutilmoqda', count: pendingUsers.length },
     { id: 'notifications', icon: '🔔', label: 'Bildirishnomalar', count: unreadCount },
   ]
@@ -685,6 +733,97 @@ export default function AdminPanel() {
                 ))}
               </div>
             </>
+          )}
+
+          {activeTab === 'battle-questions' && (
+            <div className="admin-battle-questions">
+              <div className="edu-card">
+                <h3 className="edu-card-title">⚔️ Yangi jang savoli qo'shish</h3>
+                <div className="form-group">
+                  <label>Fan</label>
+                  <select className="edu-input" value={battleQSubject} onChange={e => setBattleQSubject(e.target.value)}>
+                    <option value="matematika">Matematika</option>
+                    <option value="ingliz_tili">Ingliz tili</option>
+                    <option value="rus_tili">Rus tili</option>
+                    <option value="fizika">Fizika</option>
+                    <option value="kimyo">Kimyo</option>
+                    <option value="biologiya">Biologiya</option>
+                    <option value="tarix">Tarix</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Savol matni</label>
+                  <textarea className="edu-input" rows="3" value={battleQForm.question_text} onChange={e => setBattleQForm(p => ({ ...p, question_text: e.target.value }))} placeholder="Savol matni..."></textarea>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Variant A</label>
+                    <input type="text" className="edu-input" value={battleQForm.choice1} onChange={e => setBattleQForm(p => ({ ...p, choice1: e.target.value }))} />
+                  </div>
+                  <div className="form-group">
+                    <label>Variant B</label>
+                    <input type="text" className="edu-input" value={battleQForm.choice2} onChange={e => setBattleQForm(p => ({ ...p, choice2: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Variant C</label>
+                    <input type="text" className="edu-input" value={battleQForm.choice3} onChange={e => setBattleQForm(p => ({ ...p, choice3: e.target.value }))} />
+                  </div>
+                  <div className="form-group">
+                    <label>Variant D</label>
+                    <input type="text" className="edu-input" value={battleQForm.choice4} onChange={e => setBattleQForm(p => ({ ...p, choice4: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>To'g'ri javob</label>
+                  <select className="edu-input" value={battleQForm.correct_answer} onChange={e => setBattleQForm(p => ({ ...p, correct_answer: Number(e.target.value) }))}>
+                    <option value={1}>A</option>
+                    <option value={2}>B</option>
+                    <option value={3}>C</option>
+                    <option value={4}>D</option>
+                  </select>
+                </div>
+                <button className="btn btn-primary" onClick={handleSaveBattleQuestion} disabled={savingBattleQ}>
+                  {savingBattleQ ? 'Saqlanmoqda...' : '💾 Saqlash'}
+                </button>
+              </div>
+
+              <div className="section">
+                <h2 className="section-title">📋 Jang savollari ({battleQuestions.length})</h2>
+                {battleQuestions.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">⚔️</div>
+                    <h3>Hali jang savollari yo'q</h3>
+                  </div>
+                ) : (
+                  <div className="table-container">
+                    <table className="edu-table">
+                      <thead>
+                        <tr>
+                          <th>Fan</th>
+                          <th>Savol</th>
+                          <th>To'g'ri javob</th>
+                          <th>Amallar</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {battleQuestions.map(q => (
+                          <tr key={q.id}>
+                            <td>{q.battle?.subject || '—'}</td>
+                            <td>{q.question_text}</td>
+                            <td><span className="badge badge-success">{['A','B','C','D'][q.correct_answer - 1] || '—'}</span></td>
+                            <td>
+                              <button className="btn btn-sm btn-danger" onClick={() => handleDeleteBattleQuestion(q.id)}>🗑️</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {activeTab === 'notifications' && (

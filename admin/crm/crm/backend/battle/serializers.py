@@ -7,7 +7,7 @@ class BattleQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = BattleQuestion
         fields = [
-            'id', 'battle', 'question_text', 'choice1', 'choice2',
+            'id', 'battle', 'subject', 'question_text', 'choice1', 'choice2',
             'choice3', 'choice4', 'correct_answer', 'asked_by',
         ]
         read_only_fields = ['id']
