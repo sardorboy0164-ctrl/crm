@@ -22,6 +22,62 @@ class ConversationViewSet(viewsets.ModelViewSet):
         ctx['request'] = self.request
         return ctx
 
+    @action(detail=False, methods=['post'], url_path='start-group-chat')
+    def start_group_chat(self, request):
+        """O'quvchi o'z guruhidagi barcha o'quvchilar + ustoz + kurator + admin bilan suhbat ochadi."""
+        user = request.user
+        from accounts.models import User
+        from academy.models import Group, GroupStudent
+
+        # O'quvchining faol guruhlarini topish
+        group_links = GroupStudent.objects.filter(student=user, is_active=True).select_related('group')
+        if not group_links.exists():
+            return Response({'error': 'Siz hech qanday guruhda emassiz.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Birinchi guruhni olamiz (agar bir nechta bo'lsa, hammasini qo'shamiz)
+        all_participant_ids = set()
+        group_name = ''
+        telegram_link = ''
+        for link in group_links:
+            group = link.group
+            if not group_name:
+                group_name = f"{group.name} ({group.get_subject_display()})"
+            if not telegram_link and group.telegram_link:
+                telegram_link = group.telegram_link
+            # Guruhdagi ustoz
+            if group.teacher_id:
+                all_participant_ids.add(group.teacher_id)
+            # Guruhdagi kurator
+            if group.kurator_id:
+                all_participant_ids.add(group.kurator_id)
+            # Guruhdagi barcha o'quvchilar
+            student_ids = GroupStudent.objects.filter(group=group, is_active=True).values_list('student_id', flat=True)
+            all_participant_ids.update(student_ids)
+
+        # Admin qo'shamiz
+        admin_ids = User.objects.filter(role='admin', is_active=True).values_list('id', flat=True)
+        all_participant_ids.update(admin_ids)
+        all_participant_ids.add(user.id)
+
+        # Mavjud suhbatni topish yoki yangi yaratish
+        participant_users = User.objects.filter(id__in=all_participant_ids)
+        conversation = None
+        for conv in request.user.conversations.prefetch_related('participants'):
+            ids = set(conv.participants.values_list('id', flat=True))
+            if ids == all_participant_ids:
+                conversation = conv
+                break
+
+        if conversation is None:
+            conversation = Conversation.objects.create()
+            conversation.participants.set(participant_users)
+
+        conversation.group = group_name
+        conversation.telegram_link = telegram_link
+        conversation.save(update_fields=['group', 'telegram_link'])
+
+        return Response(ConversationSerializer(conversation, context=self.get_serializer_context()).data)
+
     @action(detail=False, methods=['post'], url_path='start-parent-chat')
     def start_parent_chat(self, request):
         """O'quvchi tanlasa ustoz + ota-ona + kurator ishtirokida suhbat ochiladi."""

@@ -25,6 +25,20 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null)
   const canStart = ['ustoz', 'kurator', 'admin'].includes(user?.role)
 
+  const startGroupChat = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      const res = await api.post('/chat/conversations/start-group-chat/')
+      setActiveConv(res.data)
+      await fetchMessages(res.data.id)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Guruh chat ochishda xatolik.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const fetchConversations = useCallback(async () => {
     try {
       const res = await api.get('/chat/conversations/')
@@ -140,6 +154,11 @@ export default function ChatPage() {
             👨‍👧 O'quvchi ota-onasi bilan bog'lanish
           </button>
         )}
+        {user?.role === 'oquvchi' && (
+          <button className="btn btn-primary" onClick={startGroupChat} disabled={busy}>
+            💬 Guruh chat
+          </button>
+        )}
       </div>
 
       {error && <div className="auth-error">⚠️ {error}</div>}
@@ -189,6 +208,12 @@ export default function ChatPage() {
                   <div className="chat-conv-avatar">{convTitle(activeConv)[0] || '?'}</div>
                   <div>
                     <h3>{convTitle(activeConv)}</h3>
+                    {activeConv.group && <span className="chat-group-name">📋 {activeConv.group}</span>}
+                    {activeConv.telegram_link && (
+                      <a href={activeConv.telegram_link} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-secondary">
+                        📱 Telegram guruh
+                      </a>
+                    )}
                     <span className="chat-participants">
                       {activeConv.participants.map(p => participantLabel(p)).join(' • ')}
                     </span>

@@ -34,7 +34,7 @@ class GroupSerializer(serializers.ModelSerializer):
         model = Group
         fields = [
             'id', 'name', 'subject', 'subject_display', 'teacher', 'teacher_name',
-            'kurator', 'kurator_name', 'room', 'schedule', 'max_students',
+            'kurator', 'kurator_name', 'room', 'schedule', 'telegram_link', 'max_students',
             'current_students_count', 'is_full', 'created_at',
         ]
         read_only_fields = ['id', 'created_at']

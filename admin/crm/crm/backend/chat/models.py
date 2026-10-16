@@ -7,6 +7,8 @@ class Conversation(models.Model):
         settings.AUTH_USER_MODEL,
         related_name='conversations',
     )
+    group = models.CharField(max_length=200, blank=True, default='')
+    telegram_link = models.CharField(max_length=500, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -24,6 +24,7 @@ class Group(models.Model):
     )
     room = models.CharField(max_length=50, blank=True, default='')
     schedule = models.TextField(blank=True, default='')
+    telegram_link = models.URLField(blank=True, default='')
     max_students = models.PositiveIntegerField(default=20)
     created_at = models.DateTimeField(auto_now_add=True)
 

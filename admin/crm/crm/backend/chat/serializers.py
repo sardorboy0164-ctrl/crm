@@ -27,7 +27,7 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Conversation
-        fields = ['id', 'participants', 'last_message', 'unread_count', 'created_at', 'updated_at']
+        fields = ['id', 'group', 'telegram_link', 'participants', 'last_message', 'unread_count', 'created_at', 'updated_at']
         read_only_fields = fields
 
     def get_last_message(self, obj):
